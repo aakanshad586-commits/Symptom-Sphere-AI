@@ -1,2 +1,114 @@
-# Symptom-Sphere-AI
-It contains a project regarding a disease prediction system using AI.
+# HealthGuard AI
+
+HealthGuard AI is an educational disease symptom classification prototype for the Foundation of Artificial Intelligence and Data Science mini-project at Nutan Maharashtra Institute of Engineering and Technology, Pune.
+
+It demonstrates a complete flow: symptom selection in a vanilla JavaScript dashboard, binary feature encoding, a Random Forest model in Python, and a Flask REST API. It is **not a medical diagnostic tool** and must not be used to make healthcare decisions.
+
+## Features
+
+- Responsive public project website and dashboard.
+- Searchable symptom checker populated from the trained model metadata, with a focused 4-6 symptom input range.
+- Dataset-backed statistics and Chart.js visualizations.
+- Educational health library based on the dataset's description and precaution files.
+- Separate common-condition reference notes for fever, common cold, and general viral infection; these are not used as model classes.
+- Model insights page with actual training metadata and measured holdout metrics.
+- Flask endpoints with validation, CORS, and clear backend errors.
+
+## Technology
+
+- Frontend: HTML5, CSS3, vanilla JavaScript, Chart.js, Font Awesome.
+- Backend: Python, Flask, Flask-CORS, Pandas, NumPy, Scikit-learn, Joblib.
+- Model: Random Forest Classifier.
+
+## Dataset
+
+The project uses the **SympScan Diseases and Symptoms Dataset** stored at `backend/dataset/sympscan/Diseases_and_Symptoms_dataset.csv`. It contains disease labels and binary symptom columns used by the training pipeline. The separate symptom description and precaution files provide educational reference content only.
+
+The source data contains repeated symptom patterns and synthetic or simplified records. The training pipeline uses the SympScan symptom columns as binary features. The checker accepts 4-6 symptoms to keep screening inputs focused. Therefore, a high holdout score is not evidence of clinical accuracy.
+
+## Folder structure
+
+```text
+HealthGuardAI/
+├── frontend/
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
+├── backend/
+│   ├── app.py
+│   ├── train_model.py
+│   ├── requirements.txt
+│   ├── dataset/
+│   │   ├── sympscan/
+│   │   │   └── Diseases_and_Symptoms_dataset.csv
+│   │   ├── symptom_description.csv
+│   │   ├── symptom_precaution.csv
+│   │   └── common_conditions.json
+│   ├── models/
+│   │   ├── disease_model.pkl
+│   │   └── metadata.json
+│   └── utils/preprocessing.py
+├── README.md
+└── .gitignore
+```
+
+## Run locally
+
+Open PowerShell in the `HealthGuardAI` folder.
+
+1. Create and activate a virtual environment:
+
+```powershell
+py -3.14 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+2. Install dependencies:
+
+```powershell
+python -m pip install -r backend\requirements.txt
+```
+
+3. Train or retrain the model:
+
+```powershell
+cd backend
+python train_model.py
+```
+
+4. Start the API in that backend terminal:
+
+```powershell
+python app.py
+```
+
+5. In a second terminal, serve the frontend:
+
+```powershell
+cd frontend
+py -m http.server 5500
+```
+
+Open http://127.0.0.1:5500 in a browser. The frontend expects Flask at http://127.0.0.1:5000.
+
+## API endpoints
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/health` | Backend status |
+| GET | `/api/dataset-info` | Dataset counts, labels, symptoms, and source |
+| GET | `/api/symptoms` | Supported symptom vocabulary |
+| GET | `/api/health-library` | Educational condition information |
+| GET | `/api/model-info` | Algorithm, status, preprocessing, and measured metrics |
+| GET | `/api/charts` | Disease distribution and symptom frequency |
+| POST | `/api/predict` | Predict from `{"symptoms":["itching","skin_rash"]}` |
+
+Prediction responses intentionally do not include confidence percentages. The system returns a class label as an educational screening output only.
+
+## Demonstration flow
+
+Start on the landing page, open **Launch dashboard**, show the live record/class/symptom counts, inspect the charts, select two or three symptoms, and run **Analyze symptoms**. Then show **Prediction results**, **Model insights**, and the source dataset in the README. Explain that preprocessing normalizes labels and converts the selected symptoms into a binary feature vector.
+
+## Limitations and future scope
+
+This is a classroom prototype using a public dataset that is not expert-reviewed for clinical use. It does not collect personal information, store patient records, prescribe medication, or replace a qualified healthcare professional. Future work could include larger expert-reviewed data, stronger external validation, multilingual support, and expert-reviewed educational content.

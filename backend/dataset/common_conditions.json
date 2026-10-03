@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Fever (symptom)",
+    "description": "Fever is a temporary rise in body temperature and can occur with infections, inflammation, dehydration, heat exposure, or other causes. It is a symptom rather than one specific disease.",
+    "precautions": ["Rest and drink suitable fluids.", "Monitor how long the fever lasts.", "Seek medical advice for severe, persistent, or concerning fever."],
+    "guidance": "Get urgent medical help for confusion, breathing difficulty, seizure, severe dehydration, or a very high or persistent fever.",
+    "source_type": "common_reference"
+  },
+  {
+    "name": "Common cold",
+    "description": "The common cold is a frequent upper-respiratory illness that may cause a runny nose, congestion, sneezing, sore throat, cough, or mild fatigue.",
+    "precautions": ["Rest and drink suitable fluids.", "Wash hands and avoid sharing personal items.", "Seek advice if symptoms are severe or do not improve."],
+    "guidance": "Medical advice is recommended for breathing difficulty, chest pain, dehydration, or symptoms that persist or worsen.",
+    "source_type": "common_reference"
+  },
+  {
+    "name": "Viral infection (general reference)",
+    "description": "Viral infections are caused by viruses and can affect different parts of the body. Symptoms vary widely, so a general label cannot identify the specific virus or required treatment.",
+    "precautions": ["Rest and maintain suitable fluid intake.", "Avoid unnecessary antibiotics; they do not treat viruses.", "Seek qualified medical advice when symptoms are severe or persistent."],
+    "guidance": "A healthcare professional may be needed to distinguish a viral illness from bacterial infection or another cause.",
+    "source_type": "common_reference"
+  }
+]
