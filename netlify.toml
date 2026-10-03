@@ -1,0 +1,4 @@
+[build]
+  # The static site lives in /frontend; the Flask backend cannot run on Netlify's static hosting.
+  publish = "frontend"
+  command = ""
