@@ -31,10 +31,12 @@ def train() -> None:
     labels = frame[target_column]
 
     classifier = RandomForestClassifier(
-        n_estimators=80,
+        n_estimators=40,
         random_state=42,
         class_weight="balanced",
-        n_jobs=-1,
+        min_samples_leaf=2,
+        max_leaf_nodes=512,
+        n_jobs=1,
     )
     metrics: dict[str, object] = {"available": False, "reason": "Evaluation not attempted."}
 

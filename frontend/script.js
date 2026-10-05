@@ -1,5 +1,13 @@
-const API_HOST = window.location.protocol === "file:" || !window.location.hostname ? "127.0.0.1" : window.location.hostname;
-const API_BASE = `http://${API_HOST}:5000/api`;
+const configuredApiOrigin = document.querySelector('meta[name="api-base-url"]')?.content.trim();
+const isLocalFrontendServer = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+  && window.location.port !== "5000";
+const API_BASE = configuredApiOrigin
+  ? `${configuredApiOrigin.replace(/\/+$/, "")}/api`
+  : window.location.protocol === "file:"
+    ? "http://127.0.0.1:5000/api"
+    : isLocalFrontendServer
+      ? `${window.location.protocol}//${window.location.hostname}:5000/api`
+      : `${window.location.origin}/api`;
 const MIN_SYMPTOMS = 4;
 const MAX_SYMPTOMS = 6;
 document.addEventListener("change", (event) => {
@@ -9,7 +17,7 @@ document.addEventListener("change", (event) => {
   notify(`Select no more than ${MAX_SYMPTOMS} symptoms.`);
   renderSymptomList();
 });
-const state = { symptoms: [], selected: new Set(), category: "all", dataset: null, library: [], charts: {} };
+const state = { symptoms: [], selected: new Set(), category: "all", dataset: null, library: [], charts: {}, backendError: null };
 const translations = {
   en: { home: "Home", howItWorks: "How it works", features: "Features", about: "About", launchDashboard: "Launch dashboard", exploreDashboard: "Explore dashboard", learnHow: "Learn how it works", startCheck: "Start symptom check", backendConnected: "Backend connected", backendOffline: "Backend offline", connecting: "Connecting to backend...", overview: "Overview", checker: "Symptom checker", results: "Prediction results", library: "Health library", insights: "Model insights", website: "About website", backWebsite: "Back to website", goodToSee: "Good to see you.", checkerTitle: "What are you experiencing?", checkerIntro: "Select 4 to 6 symptoms from the simplified model vocabulary. This produces an educational screening output, never a confirmed diagnosis.", searchSymptoms: "Search symptoms...", yourSelection: "Your selection", selected: "symptoms selected", selectedHint: "Choose 4 to 6 symptoms for a focused result.", clear: "Clear all", analyze: "Analyze symptoms", noMatch: "No matching symptoms.", connectSymptoms: "Connect the backend to load symptoms.", chooseSymptoms: "Select 4 to 6 symptoms first.", libraryHeading: "Reference, not diagnosis.", libraryIntro: "General educational notes for the condition classes represented in the public dataset.", searchConditions: "Search conditions...", seekHelp: "When to seek help:" },
   mr: { home: "मुख्यपृष्ठ", howItWorks: "हे कसे काम करते", features: "वैशिष्ट्ये", about: "आमच्याबद्दल", launchDashboard: "डॅशबोर्ड उघडा", exploreDashboard: "डॅशबोर्ड पहा", learnHow: "हे कसे काम करते", startCheck: "लक्षणांची तपासणी सुरू करा", backendConnected: "बॅकएंड जोडलेले आहे", backendOffline: "बॅकएंड ऑफलाइन आहे", connecting: "बॅकएंडशी जोडत आहे...", overview: "आढावा", checker: "लक्षण तपासणी", results: "अंदाजाचे निकाल", library: "आरोग्य माहिती", insights: "मॉडेल माहिती", website: "वेबसाइटविषयी", backWebsite: "वेबसाइटवर परत जा", goodToSee: "तुम्हाला पुन्हा पाहून आनंद झाला.", checkerTitle: "तुम्हाला कोणती लक्षणे जाणवत आहेत?", checkerIntro: "सोप्या मॉडेलमधून ४ ते ६ लक्षणे निवडा. हा शैक्षणिक अंदाज आहे, निश्चित निदान नाही.", searchSymptoms: "लक्षणे शोधा...", yourSelection: "तुमची निवड", selected: "लक्षणे निवडली", selectedHint: "अचूक निकालासाठी ४ ते ६ लक्षणे निवडा.", clear: "सर्व हटवा", analyze: "लक्षणांचे विश्लेषण करा", noMatch: "जुळणारी लक्षणे नाहीत.", connectSymptoms: "लक्षणे लोड करण्यासाठी बॅकएंड जोडा.", chooseSymptoms: "प्रथम ४ ते ६ लक्षणे निवडा.", libraryHeading: "संदर्भासाठी, निदानासाठी नाही.", libraryIntro: "या सार्वजनिक डेटासेटमधील आजारांच्या वर्गांबद्दल सामान्य शैक्षणिक माहिती.", searchConditions: "आजार शोधा...", seekHelp: "मदत कधी घ्यावी:" }
@@ -41,7 +49,15 @@ const $ = (selector) => document.querySelector(selector);
 const dashboardContent = $("#dashboardContent");
 
 async function api(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, options);
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, options);
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(`Cannot reach the backend at ${API_BASE}. Start Flask or check the deployed service URL.`);
+    }
+    throw error;
+  }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || "The backend returned an error.");
   return data;
@@ -69,7 +85,11 @@ async function loadDashboardData() {
   try {
     const [dataset, charts, library, model] = await Promise.all([api("/dataset-info"), api("/charts"), api("/health-library"), api("/model-info")]);
     state.dataset = { ...dataset, model }; state.library = library.items || []; state.charts = charts;
-  } catch (error) { notify(error.message); }
+    state.backendError = null;
+  } catch (error) {
+    state.backendError = error.message;
+    notify(error.message);
+  }
 }
 
 document.querySelectorAll(".dashboard-nav button").forEach((button) => button.addEventListener("click", () => showView(button.dataset.view)));
@@ -81,7 +101,11 @@ function showView(view) {
 
 function renderOverview() {
   setTitle("Good to see you."); const data = state.dataset;
-  if (!data) { dashboardContent.innerHTML = '<div class="panel loading">Waiting for the Flask backend...</div>'; return; }
+  if (!data) {
+    dashboardContent.innerHTML = `<div class="panel loading"><h2>Backend unavailable</h2><p>${escapeHTML(state.backendError || "Connect to the backend to load dashboard data.")}</p><button class="button button-primary" id="retryBackend">Retry connection</button></div>`;
+    $("#retryBackend").addEventListener("click", async () => { await loadDashboardData(); showView("overview"); });
+    return;
+  }
   dashboardContent.innerHTML = `<div class="dash-grid"><div class="stat-card"><div><small>Supported classes</small><strong>${data.class_count}</strong></div><span class="stat-icon"><i class="fa-solid fa-layer-group"></i></span></div><div class="stat-card"><div><small>Available symptoms</small><strong>${data.feature_count}</strong></div><span class="stat-icon"><i class="fa-solid fa-list-check"></i></span></div><div class="stat-card"><div><small>Dataset records</small><strong>${data.records.toLocaleString()}</strong></div><span class="stat-icon"><i class="fa-solid fa-database"></i></span></div><div class="stat-card"><div><small>Model status</small><strong>${data.model.model_status === "ready" ? "Ready" : "Setup"}</strong></div><span class="stat-icon"><i class="fa-solid fa-circle-check"></i></span></div></div><div class="dashboard-columns"><div class="panel"><div class="panel-heading"><div><h2>Disease class distribution</h2><p>Records grouped by target label</p></div></div><div class="chart-wrap"><canvas id="diseaseChart"></canvas></div></div><div class="panel"><div class="panel-heading"><div><h2>Common symptoms</h2><p>Frequency across dataset records</p></div></div><div class="chart-wrap"><canvas id="symptomChart"></canvas></div></div></div><div class="panel quick-start" style="margin-top:15px"><div><h2>Ready to run a check?</h2><p>Choose symptoms from the dataset vocabulary and see how the educational classifier responds.</p></div><button class="button button-light" id="overviewChecker">Start symptom check <i class="fa-solid fa-arrow-right"></i></button></div>`;
   $("#overviewChecker").addEventListener("click", () => showView("checker")); renderCharts();
 }

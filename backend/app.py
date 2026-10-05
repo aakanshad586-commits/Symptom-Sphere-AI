@@ -1,7 +1,7 @@
 """Flask REST API for the HealthGuard AI educational prototype."""
 
 import json
-from functools import lru_cache
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -9,11 +9,13 @@ import joblib
 import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from werkzeug.exceptions import HTTPException
 
 from utils.preprocessing import feature_names_from_frame, normalize_symptom
 
 
 BASE_DIR = Path(__file__).resolve().parent
+FRONTEND_DIR = BASE_DIR.parent / "frontend"
 DATASET_PATH = BASE_DIR / "dataset" / "sympscan" / "Diseases_and_Symptoms_dataset.csv"
 MODEL_PATH = BASE_DIR / "models" / "disease_model.pkl"
 METADATA_PATH = BASE_DIR / "models" / "metadata.json"
@@ -23,7 +25,7 @@ MIN_SYMPTOMS = 4
 MAX_SYMPTOMS = 6
 MIN_PREDICTION_CONFIDENCE = 0.65
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
 CORS(app)
 
 
@@ -33,6 +35,7 @@ def load_metadata() -> dict:
     return json.loads(METADATA_PATH.read_text(encoding="utf-8"))
 
 
+@lru_cache(maxsize=1)
 def load_model_bundle() -> dict:
     if not MODEL_PATH.exists():
         raise FileNotFoundError("Model is not trained yet. Run python train_model.py first.")
@@ -144,6 +147,11 @@ def no_match_information(symptoms: list[str]) -> tuple[list[str], list[str]]:
     return possibilities, comfort_measures
 
 
+@app.get("/")
+def index():
+    return app.send_static_file("index.html")
+
+
 @app.get("/api/health")
 def health():
     return jsonify({"status": "ok", "message": "HealthGuard AI backend is running"})
@@ -250,9 +258,11 @@ def missing_model(error):
 
 @app.errorhandler(Exception)
 def unexpected_error(error):
+    if isinstance(error, HTTPException):
+        return error
     app.logger.exception("Unhandled API error")
     return jsonify({"success": False, "error": "The backend could not complete that request."}), 500
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)

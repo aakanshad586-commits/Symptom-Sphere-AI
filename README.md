@@ -1,6 +1,6 @@
-# HealthGuard AI
+# SymptomSphere AI
 
-HealthGuard AI is an educational disease symptom classification prototype for the Foundation of Artificial Intelligence and Data Science mini-project at Nutan Maharashtra Institute of Engineering and Technology, Pune.
+SymptomSphere AI is an educational disease symptom classification prototype for the Foundation of Artificial Intelligence and Data Science mini-project at Nutan Maharashtra Institute of Engineering and Technology, Pune.
 
 It demonstrates a complete flow: symptom selection in a vanilla JavaScript dashboard, binary feature encoding, a Random Forest model in Python, and a Flask REST API. It is **not a medical diagnostic tool** and must not be used to make healthcare decisions.
 
@@ -29,7 +29,7 @@ The source data contains repeated symptom patterns and synthetic or simplified r
 ## Folder structure
 
 ```text
-HealthGuardAI/
+Symptom-Sphere-AI/
 ├── frontend/
 │   ├── index.html
 │   ├── style.css
@@ -54,7 +54,7 @@ HealthGuardAI/
 
 ## Run locally
 
-Open PowerShell in the `HealthGuardAI` folder.
+Open PowerShell in the repository folder.
 
 1. Create and activate a virtual environment:
 
@@ -69,27 +69,25 @@ py -3.14 -m venv .venv
 python -m pip install -r backend\requirements.txt
 ```
 
-3. Train or retrain the model:
+3. Train the model (also needed after changing the dataset):
 
 ```powershell
-cd backend
-python train_model.py
+python backend\train_model.py
 ```
 
-4. Start the API in that backend terminal:
+4. Start the website and API together:
 
 ```powershell
-python app.py
+python backend\app.py
 ```
 
-5. In a second terminal, serve the frontend:
+Open http://127.0.0.1:5000. Keep the backend terminal running while using the site. Flask serves both the frontend and API, so opening `frontend\index.html` directly is not needed. If you prefer a separate frontend server on port 5500, the frontend automatically uses the local API on port 5000.
 
-```powershell
-cd frontend
-py -m http.server 5500
-```
+## Deploy on Render
 
-Open http://127.0.0.1:5500 in a browser. The frontend expects Flask at http://127.0.0.1:5000.
+The included `render.yaml` configures a single Render web service that serves the frontend and API from the same HTTPS origin. Push the repository to GitHub, create a new Blueprint on Render, and select the repository. Render installs the backend dependencies and trains the ignored model artifact during the build, then starts Flask with Gunicorn. Once deployment is complete, open the service URL provided by Render.
+
+The model file is intentionally excluded from Git; do not remove that ignore rule or commit generated model artifacts. The training dataset must remain in the repository so Render can rebuild the model. If you deploy the static frontend separately instead, set the `api-base-url` meta tag in `frontend/index.html` to the backend origin (for example, `https://your-api.example.com`); configure that backend to allow requests from the frontend origin.
 
 ## API endpoints
 
@@ -107,7 +105,7 @@ Prediction responses intentionally do not include confidence percentages. The sy
 
 ## Demonstration flow
 
-Start on the landing page, open **Launch dashboard**, show the live record/class/symptom counts, inspect the charts, select two or three symptoms, and run **Analyze symptoms**. Then show **Prediction results**, **Model insights**, and the source dataset in the README. Explain that preprocessing normalizes labels and converts the selected symptoms into a binary feature vector.
+Start on the landing page, open **Launch dashboard**, show the live record/class/symptom counts, inspect the charts, select four to six symptoms, and run **Analyze symptoms**. Then show **Prediction results**, **Model insights**, and the source dataset in the README. Explain that preprocessing normalizes labels and converts the selected symptoms into a binary feature vector.
 
 ## Limitations and future scope
 

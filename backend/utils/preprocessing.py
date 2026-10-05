@@ -35,8 +35,18 @@ def symptom_columns(frame: pd.DataFrame) -> list[str]:
 def build_feature_matrix(frame: pd.DataFrame, feature_names: Iterable[str]) -> pd.DataFrame:
     """Encode each row as a binary vector over the known symptom vocabulary."""
     names = list(feature_names)
+    source_columns = symptom_columns(frame)
+    if not any(column.lower().startswith("symptom_") for column in frame.columns):
+        values = frame[source_columns].apply(pd.to_numeric, errors="coerce")
+        valid_values = frame[source_columns].isna() | values.isin((0, 1))
+        if valid_values.to_numpy().all():
+            values = values.fillna(0)
+            values.columns = [normalize_symptom(column) for column in source_columns]
+            values = values.T.groupby(level=0, sort=False).max().T
+            return values.reindex(columns=names, fill_value=0).astype("uint8")
+
     matrix = pd.DataFrame(0, index=frame.index, columns=names, dtype=int)
-    for column in symptom_columns(frame):
+    for column in source_columns:
         for index, value in frame[column].items():
             binary_value = pd.to_numeric(value, errors="coerce")
             normalized_column = normalize_symptom(column)

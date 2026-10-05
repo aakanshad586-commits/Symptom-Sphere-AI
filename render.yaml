@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: symptomsphere-ai
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt && python backend/train_model.py
+    startCommand: cd backend && gunicorn --bind 0.0.0.0:$PORT app:app
