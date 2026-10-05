@@ -31,11 +31,11 @@ def train() -> None:
     labels = frame[target_column]
 
     classifier = RandomForestClassifier(
-        n_estimators=40,
+        n_estimators=20,
         random_state=42,
         class_weight="balanced",
         min_samples_leaf=2,
-        max_leaf_nodes=512,
+        max_leaf_nodes=64,
         n_jobs=1,
     )
     metrics: dict[str, object] = {"available": False, "reason": "Evaluation not attempted."}
@@ -58,6 +58,22 @@ def train() -> None:
         metrics = {"available": False, "reason": str(error)}
         classifier.fit(features, labels)
 
+    disease_distribution = {
+        str(disease): int(count) for disease, count in labels.value_counts().items()
+    }
+    symptom_frequency = {
+        str(symptom): int(count)
+        for symptom, count in features.sum(axis=0)
+        .sort_values(ascending=False)
+        .head(12)
+        .items()
+    }
+    grouped_features = features.groupby(labels, sort=True).max()
+    disease_symptoms = {
+        str(disease): grouped_features.columns[row.to_numpy(dtype=bool)].tolist()
+        for disease, row in grouped_features.iterrows()
+    }
+
     MODEL_DIR.mkdir(exist_ok=True)
     joblib.dump({"model": classifier, "features": feature_names}, MODEL_PATH)
     metadata = {
@@ -69,6 +85,11 @@ def train() -> None:
         "class_count": int(labels.nunique()),
         "classes": sorted(labels.unique().tolist()),
         "features": feature_names,
+        "dataset_insights": {
+            "disease_distribution": disease_distribution,
+            "symptom_frequency": symptom_frequency,
+            "disease_symptoms": disease_symptoms,
+        },
         "algorithm": "Random Forest Classifier",
         "metrics": metrics,
     }

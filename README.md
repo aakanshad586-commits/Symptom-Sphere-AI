@@ -85,7 +85,9 @@ Open http://127.0.0.1:5000. Keep the backend terminal running while using the si
 
 ## Deploy on Render
 
-The included `render.yaml` configures a single Render web service that serves the frontend and API from the same HTTPS origin. Push the repository to GitHub, create a new Blueprint on Render, and select the repository. Render installs the backend dependencies and trains the ignored model artifact during the build, then starts Flask with Gunicorn. Once deployment is complete, open the service URL provided by Render.
+The included `render.yaml` configures a single Render web service that serves the frontend and API from the same HTTPS origin. Push the repository to GitHub, create a new Blueprint on Render, and select the repository. Render installs the backend dependencies and trains the ignored model artifact and dataset summaries during the build, then starts Flask with Gunicorn. Once deployment is complete, open the Render service URL on every device; do not open `frontend/index.html` directly on another device, because a local HTML file points its API requests at that device's own `localhost`.
+
+If the dashboard reports that the backend is unavailable, check that `https://your-service.onrender.com/api/health` returns `{"status":"ok"}`. After pulling changes to the training pipeline, retrain locally with `python backend\\train_model.py`; Render runs this step automatically on deployment.
 
 The model file is intentionally excluded from Git; do not remove that ignore rule or commit generated model artifacts. The training dataset must remain in the repository so Render can rebuild the model. If you deploy the static frontend separately instead, set the `api-base-url` meta tag in `frontend/index.html` to the backend origin (for example, `https://your-api.example.com`); configure that backend to allow requests from the frontend origin.
 
